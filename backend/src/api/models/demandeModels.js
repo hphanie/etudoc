@@ -33,5 +33,4 @@ const demandeSchema = new mongoose.Schema({
   ],
 });
 
-const Demande = mongoose.model("Demande", demandeSchema);
-module.exports = Demande;
+module.exports = mongoose.model("Demande", demandeSchema);
