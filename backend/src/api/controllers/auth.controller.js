@@ -2,8 +2,8 @@ const authService = require("../services/auth.service");
 
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const result = await authService.login({ email, password });
+    const { email, motDePasse } = req.body;
+    const result = await authService.login({ email, motDePasse });
     res.status(200).json(result);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -11,7 +11,7 @@ const login = async (req, res) => {
 };
 
 const register = async (req, res) => {
-  console.log("Requête d'inscription reçue :", req.body);  
+  console.log("Reçu depuis React :", req.body);  
   try {
     const result = await authService.register(req.body);
     res.status(201).json(result);

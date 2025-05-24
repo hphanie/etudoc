@@ -3,32 +3,50 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 
-const register = async ({ fullname, email, motDePasse }) => {
+const register = async ({ fullname, email, motDePasse, role }) => {
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     throw new Error("Cet email est déjà utilisé.");
   }
-
+   if (!motDePasse) {
+    console.log("❌ motDePasse est undefined !");
+    throw new Error("Le mot de passe est manquant.");
+  }
   const hashedPassword = await bcrypt.hash(motDePasse, 10);
 
   const newUser = new User({
     fullname,
     email,
     motDePasse: hashedPassword,
+    role,
   });
 
   await newUser.save();
 
-  return { message: "Inscription réussie !" };
+  // Auto login après inscription
+  const token = jwt.sign({ userId: newUser._id, role: newUser.role }, process.env.JWT_SECRET, {
+    expiresIn: "7d",
+  });
+
+  return {
+    message: "Inscription réussie !",
+    token,
+    user: {
+      id: newUser._id,
+      fullname: newUser.fullname,
+      email: newUser.email,
+      role: newUser.role,
+    },
+  };
 };
 
-const login = async ({ email, password }) => {
+const login = async ({ email, motDePasse }) => {
   const user = await User.findOne({ email });
   if (!user) {
     throw new Error("Email ou mot de passe incorrect.");
   }
 
-  const isMatch = await bcrypt.compare(password, user.motDePasse);
+  const isMatch = await bcrypt.compare(motDePasse, user.motDePasse);
   if (!isMatch) {
     throw new Error("Email ou mot de passe incorrect.");
   }
@@ -89,7 +107,7 @@ const resetPassword = async ({ token, newPassword }) => {
 };
 
 const getMe = async (user) => {
-  const existingUser = await User.findById(user.userId).select("-motDePasse");
+  const existingUser = await User.findById(user.userId).select("motDePasse");
   if (!existingUser) throw new Error("Utilisateur non trouvé.");
 
   return existingUser;
